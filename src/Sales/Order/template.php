@@ -2,7 +2,10 @@
 
 declare(strict_types=1);
 
+use App\Sales\Order\OrderInput;
+use Yiisoft\FormModel\Field;
 use Yiisoft\Html\Html;
+use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\View\WebView;
 
 /**
@@ -10,20 +13,25 @@ use Yiisoft\View\WebView;
  * @var list<string> $errors
  * @var string $status
  * @var int|null $selectedLocationId
- * @var array{
- *     customer_name:string,
- *     location_id:string,
- *     notes:string,
- *     lines:list<array{item_id:string,quantity:string}>
- * } $form
+ * @var OrderInput $form
  * @var list<array{id:string,code:string,name:string}> $locations
  * @var list<array{id:string,sku:string,name:string,unit_id:string,unit_name:string,unit_symbol:string}> $items
  * @var list<array{item_id:string,item_name:string,sku:string,quantity:string,unit_symbol:string}> $stockRows
  * @var list<array{id:string,order_number:string,location_name:string,customer_name:string,ordered_at:string,total_items:string,notes:?string,items_summary:string}> $orders
  * @var string|null $csrf
+ * @var UrlGeneratorInterface $urlGenerator
  */
 
 $this->setTitle('Sales Orders');
+$pageUrl = $urlGenerator->generate('sales.orders');
+$locationOptions = [];
+foreach ($locations as $location) {
+    $locationOptions[$location['id']] = $location['code'] . ' - ' . $location['name'];
+}
+$itemOptions = [];
+foreach ($items as $item) {
+    $itemOptions[$item['id']] = $item['sku'] . ' - ' . $item['name'];
+}
 ?>
 
 <div class="page-heading">
@@ -51,47 +59,23 @@ $this->setTitle('Sales Orders');
             </div>
         </div>
 
-        <form method="post" class="form-grid">
+        <form method="post" class="form-grid" action="<?= Html::encode($pageUrl) ?>">
             <?php if ($csrf !== null): ?>
                 <input type="hidden" name="_csrf" value="<?= Html::encode($csrf) ?>">
             <?php endif; ?>
 
-            <label>
-                <span>Customer</span>
-                <input type="text" name="customer_name" value="<?= Html::encode($form['customer_name']) ?>" placeholder="PT Sumber Makmur">
-            </label>
-
-            <label>
-                <span>Lokasi stok</span>
-                <select name="location_id">
-                    <option value="">Pilih lokasi</option>
-                    <?php foreach ($locations as $location): ?>
-                        <option value="<?= Html::encode($location['id']) ?>" <?= $form['location_id'] === $location['id'] ? 'selected' : '' ?>>
-                            <?= Html::encode($location['code']) ?> - <?= Html::encode($location['name']) ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-            </label>
-
-            <label class="full-width">
-                <span>Catatan</span>
-                <textarea name="notes" rows="3" placeholder="Opsional"><?= Html::encode($form['notes']) ?></textarea>
-            </label>
+            <?= Field::text($form, 'customerName')->required()->placeholder('PT Sumber Makmur') ?>
+            <?= Field::select($form, 'locationId')->optionsData($locationOptions)->prompt('Pilih lokasi')->required() ?>
+            <?= Field::textarea($form, 'notes')->rows(3)->placeholder('Opsional') ?>
+            <?= Field::errorSummary($form) ?>
 
             <div class="subsection full-width">
                 <h3>Baris order</h3>
                 <div class="line-items">
-                    <?php foreach ($form['lines'] as $index => $line): ?>
+                    <?php foreach ($form->lines as $index => $_line): ?>
                         <div class="line-item-row">
-                            <select name="lines[<?= $index ?>][item_id]">
-                                <option value="">Pilih item</option>
-                                <?php foreach ($items as $item): ?>
-                                    <option value="<?= Html::encode($item['id']) ?>" <?= $line['item_id'] === $item['id'] ? 'selected' : '' ?>>
-                                        <?= Html::encode($item['sku']) ?> - <?= Html::encode($item['name']) ?>
-                                    </option>
-                                <?php endforeach; ?>
-                            </select>
-                            <input type="number" min="1" name="lines[<?= $index ?>][quantity]" value="<?= Html::encode($line['quantity']) ?>" placeholder="Qty">
+                            <?= Field::select($form, "lines[$index][item_id]")->optionsData($itemOptions)->prompt('Pilih item') ?>
+                            <?= Field::number($form, "lines[$index][quantity]")->min(1)->placeholder('Qty') ?>
                         </div>
                     <?php endforeach; ?>
                 </div>
@@ -109,7 +93,7 @@ $this->setTitle('Sales Orders');
                 <p class="eyebrow">Cek stok item di gudang</p>
                 <h2>Snapshot stok lokasi</h2>
             </div>
-            <form method="get" class="inline-filter">
+            <form method="get" class="inline-filter" action="<?= Html::encode($pageUrl) ?>">
                 <select name="location">
                     <option value="">Pilih lokasi</option>
                     <?php foreach ($locations as $location): ?>

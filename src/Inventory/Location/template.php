@@ -2,19 +2,24 @@
 
 declare(strict_types=1);
 
+use App\Inventory\Location\LocationInput;
+use Yiisoft\FormModel\Field;
 use Yiisoft\Html\Html;
+use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\View\WebView;
 
 /**
  * @var WebView $this
  * @var list<string> $errors
  * @var string $status
- * @var array{id:string,code:string,name:string} $form
+ * @var LocationInput $form
  * @var list<array{id:string,code:string,name:string}> $locations
  * @var string|null $csrf
+ * @var UrlGeneratorInterface $urlGenerator
  */
 
 $this->setTitle('Inventory Locations');
+$pageUrl = $urlGenerator->generate('inventory.locations');
 ?>
 
 <div class="page-heading">
@@ -38,30 +43,22 @@ $this->setTitle('Inventory Locations');
         <div class="panel-heading">
             <div>
                 <p class="eyebrow">Master location</p>
-                <h2><?= $form['id'] === '' ? 'Tambah lokasi' : 'Edit lokasi' ?></h2>
+                <h2><?= $form->id === '' ? 'Tambah lokasi' : 'Edit lokasi' ?></h2>
             </div>
         </div>
 
-        <form method="post" class="form-grid">
+        <form method="post" class="form-grid" action="<?= Html::encode($pageUrl) ?>">
             <?php if ($csrf !== null): ?>
                 <input type="hidden" name="_csrf" value="<?= Html::encode($csrf) ?>">
             <?php endif; ?>
-            <input type="hidden" name="id" value="<?= Html::encode($form['id']) ?>">
-
-            <label>
-                <span>Kode lokasi</span>
-                <input type="text" name="code" value="<?= Html::encode($form['code']) ?>" placeholder="JKT-01">
-            </label>
-
-            <label>
-                <span>Nama lokasi</span>
-                <input type="text" name="name" value="<?= Html::encode($form['name']) ?>" placeholder="Gudang Jakarta">
-            </label>
-
+            <?= Field::hidden($form, 'id') ?>
+            <?= Field::text($form, 'code')->required()->placeholder('JKT-01') ?>
+            <?= Field::text($form, 'name')->required()->placeholder('Gudang Jakarta') ?>
+            <?= Field::errorSummary($form) ?>
             <div class="form-actions full-width">
                 <button class="button" type="submit">Simpan lokasi</button>
-                <?php if ($form['id'] !== ''): ?>
-                    <a class="button ghost" href="/inventory/locations">Batal edit</a>
+                <?php if ($form->id !== ''): ?>
+                    <a class="button ghost" href="<?= Html::encode($pageUrl) ?>">Batal edit</a>
                 <?php endif; ?>
             </div>
         </form>
@@ -89,13 +86,13 @@ $this->setTitle('Inventory Locations');
                     <td><?= Html::encode($location['code']) ?></td>
                     <td><?= Html::encode($location['name']) ?></td>
                     <td class="table-actions">
-                        <a class="button ghost small" href="/inventory/locations?edit=<?= Html::encode($location['id']) ?>">Edit</a>
-                        <form method="post">
+                        <a class="button ghost small" href="<?= Html::encode($pageUrl . '?edit=' . $location['id']) ?>">Edit</a>
+                        <form method="post" action="<?= Html::encode($pageUrl) ?>">
                             <?php if ($csrf !== null): ?>
                                 <input type="hidden" name="_csrf" value="<?= Html::encode($csrf) ?>">
                             <?php endif; ?>
                             <input type="hidden" name="operation" value="delete">
-                            <input type="hidden" name="id" value="<?= Html::encode($location['id']) ?>">
+                            <input type="hidden" name="location[id]" value="<?= Html::encode($location['id']) ?>">
                             <button class="button danger small" type="submit">Hapus</button>
                         </form>
                     </td>

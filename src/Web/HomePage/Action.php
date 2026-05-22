@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Web\HomePage;
 
-use App\Catalog\CatalogRepository;
-use App\Inventory\InventoryRepository;
-use App\Sales\OrderRepository;
+use App\Catalog\CatalogViewRepositoryInterface;
+use App\Inventory\InventoryViewRepositoryInterface;
+use App\Sales\Order\OrderViewRepositoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
@@ -14,9 +14,9 @@ final readonly class Action
 {
     public function __construct(
         private WebViewRenderer $viewRenderer,
-        private CatalogRepository $catalogRepository,
-        private InventoryRepository $inventoryRepository,
-        private OrderRepository $orderRepository,
+        private CatalogViewRepositoryInterface $catalogRepository,
+        private InventoryViewRepositoryInterface $inventoryRepository,
+        private OrderViewRepositoryInterface $orderRepository,
     ) {}
 
     public function __invoke(): ResponseInterface

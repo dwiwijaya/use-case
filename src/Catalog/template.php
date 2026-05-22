@@ -2,7 +2,11 @@
 
 declare(strict_types=1);
 
+use App\Catalog\Item\ItemInput;
+use App\Catalog\Unit\UnitInput;
+use Yiisoft\FormModel\Field;
 use Yiisoft\Html\Html;
+use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\View\WebView;
 
 /**
@@ -11,12 +15,18 @@ use Yiisoft\View\WebView;
  * @var string $status
  * @var list<array{id:string,name:string,symbol:string}> $units
  * @var list<array{id:string,sku:string,name:string,unit_id:string,unit_name:string,unit_symbol:string}> $items
- * @var array{id:string,name:string,symbol:string} $unitForm
- * @var array{id:string,sku:string,name:string,unit_id:string} $itemForm
+ * @var UnitInput $unitForm
+ * @var ItemInput $itemForm
  * @var string|null $csrf
+ * @var UrlGeneratorInterface $urlGenerator
  */
 
 $this->setTitle('Catalog Items');
+$pageUrl = $urlGenerator->generate('catalog.items');
+$unitOptions = [];
+foreach ($units as $unit) {
+    $unitOptions[$unit['id']] = $unit['name'] . ' (' . $unit['symbol'] . ')';
+}
 ?>
 
 <div class="page-heading">
@@ -40,31 +50,23 @@ $this->setTitle('Catalog Items');
         <div class="panel-heading">
             <div>
                 <p class="eyebrow">Reference data</p>
-                <h2><?= $unitForm['id'] === '' ? 'Tambah unit' : 'Edit unit' ?></h2>
+                <h2><?= $unitForm->id === '' ? 'Tambah unit' : 'Edit unit' ?></h2>
             </div>
         </div>
 
-        <form method="post" class="form-grid">
+        <form method="post" class="form-grid" action="<?= Html::encode($pageUrl) ?>">
             <?php if ($csrf !== null): ?>
                 <input type="hidden" name="_csrf" value="<?= Html::encode($csrf) ?>">
             <?php endif; ?>
             <input type="hidden" name="entity" value="unit">
-            <input type="hidden" name="id" value="<?= Html::encode($unitForm['id']) ?>">
-
-            <label>
-                <span>Nama unit</span>
-                <input type="text" name="name" value="<?= Html::encode($unitForm['name']) ?>" placeholder="Kilogram">
-            </label>
-
-            <label>
-                <span>Simbol</span>
-                <input type="text" name="symbol" value="<?= Html::encode($unitForm['symbol']) ?>" placeholder="kg">
-            </label>
-
+            <?= Field::hidden($unitForm, 'id') ?>
+            <?= Field::text($unitForm, 'name')->required()->placeholder('Kilogram') ?>
+            <?= Field::text($unitForm, 'symbol')->required()->placeholder('kg') ?>
+            <?= Field::errorSummary($unitForm) ?>
             <div class="form-actions full-width">
                 <button class="button" type="submit">Simpan unit</button>
-                <?php if ($unitForm['id'] !== ''): ?>
-                    <a class="button ghost" href="/catalog/items">Batal edit</a>
+                <?php if ($unitForm->id !== ''): ?>
+                    <a class="button ghost" href="<?= Html::encode($pageUrl) ?>">Batal edit</a>
                 <?php endif; ?>
             </div>
         </form>
@@ -83,14 +85,14 @@ $this->setTitle('Catalog Items');
                     <td><?= Html::encode($unit['name']) ?></td>
                     <td><?= Html::encode($unit['symbol']) ?></td>
                     <td class="table-actions">
-                        <a class="button ghost small" href="/catalog/items?editUnit=<?= Html::encode($unit['id']) ?>">Edit</a>
-                        <form method="post">
+                        <a class="button ghost small" href="<?= Html::encode($pageUrl . '?editUnit=' . $unit['id']) ?>">Edit</a>
+                        <form method="post" action="<?= Html::encode($pageUrl) ?>">
                             <?php if ($csrf !== null): ?>
                                 <input type="hidden" name="_csrf" value="<?= Html::encode($csrf) ?>">
                             <?php endif; ?>
                             <input type="hidden" name="entity" value="unit">
                             <input type="hidden" name="operation" value="delete">
-                            <input type="hidden" name="id" value="<?= Html::encode($unit['id']) ?>">
+                            <input type="hidden" name="unit[id]" value="<?= Html::encode($unit['id']) ?>">
                             <button class="button danger small" type="submit">Hapus</button>
                         </form>
                     </td>
@@ -104,43 +106,24 @@ $this->setTitle('Catalog Items');
         <div class="panel-heading">
             <div>
                 <p class="eyebrow">Shared master</p>
-                <h2><?= $itemForm['id'] === '' ? 'Tambah item' : 'Edit item' ?></h2>
+                <h2><?= $itemForm->id === '' ? 'Tambah item' : 'Edit item' ?></h2>
             </div>
         </div>
 
-        <form method="post" class="form-grid">
+        <form method="post" class="form-grid" action="<?= Html::encode($pageUrl) ?>">
             <?php if ($csrf !== null): ?>
                 <input type="hidden" name="_csrf" value="<?= Html::encode($csrf) ?>">
             <?php endif; ?>
             <input type="hidden" name="entity" value="item">
-            <input type="hidden" name="id" value="<?= Html::encode($itemForm['id']) ?>">
-
-            <label>
-                <span>SKU</span>
-                <input type="text" name="sku" value="<?= Html::encode($itemForm['sku']) ?>" placeholder="SKU-001">
-            </label>
-
-            <label>
-                <span>Nama item</span>
-                <input type="text" name="name" value="<?= Html::encode($itemForm['name']) ?>" placeholder="Beras Premium">
-            </label>
-
-            <label class="full-width">
-                <span>Unit</span>
-                <select name="unit_id">
-                    <option value="">Pilih unit</option>
-                    <?php foreach ($units as $unit): ?>
-                        <option value="<?= Html::encode($unit['id']) ?>" <?= $itemForm['unit_id'] === $unit['id'] ? 'selected' : '' ?>>
-                            <?= Html::encode($unit['name']) ?> (<?= Html::encode($unit['symbol']) ?>)
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-            </label>
-
+            <?= Field::hidden($itemForm, 'id') ?>
+            <?= Field::text($itemForm, 'sku')->required()->placeholder('SKU-001') ?>
+            <?= Field::text($itemForm, 'name')->required()->placeholder('Beras Premium') ?>
+            <?= Field::select($itemForm, 'unitId')->optionsData($unitOptions)->prompt('Pilih unit')->required() ?>
+            <?php Field::errorSummary($itemForm) ?>
             <div class="form-actions full-width">
                 <button class="button" type="submit">Simpan item</button>
-                <?php if ($itemForm['id'] !== ''): ?>
-                    <a class="button ghost" href="/catalog/items">Batal edit</a>
+                <?php if ($itemForm->id !== ''): ?>
+                    <a class="button ghost" href="<?= Html::encode($pageUrl) ?>">Batal edit</a>
                 <?php endif; ?>
             </div>
         </form>
@@ -161,14 +144,14 @@ $this->setTitle('Catalog Items');
                     <td><?= Html::encode($item['name']) ?></td>
                     <td><?= Html::encode($item['unit_name']) ?> (<?= Html::encode($item['unit_symbol']) ?>)</td>
                     <td class="table-actions">
-                        <a class="button ghost small" href="/catalog/items?editItem=<?= Html::encode($item['id']) ?>">Edit</a>
-                        <form method="post">
+                        <a class="button ghost small" href="<?= Html::encode($pageUrl . '?editItem=' . $item['id']) ?>">Edit</a>
+                        <form method="post" action="<?= Html::encode($pageUrl) ?>">
                             <?php if ($csrf !== null): ?>
                                 <input type="hidden" name="_csrf" value="<?= Html::encode($csrf) ?>">
                             <?php endif; ?>
                             <input type="hidden" name="entity" value="item">
                             <input type="hidden" name="operation" value="delete">
-                            <input type="hidden" name="id" value="<?= Html::encode($item['id']) ?>">
+                            <input type="hidden" name="item[id]" value="<?= Html::encode($item['id']) ?>">
                             <button class="button danger small" type="submit">Hapus</button>
                         </form>
                     </td>

@@ -2,49 +2,39 @@
 
 declare(strict_types=1);
 
-namespace App\Sales;
+namespace App\Sales\Order;
 
 use DomainException;
 use Yiisoft\Db\Connection\ConnectionInterface;
 
 use function array_keys;
-use function array_sum;
-use function date;
 use function implode;
-use function random_int;
 use function sprintf;
 
-final readonly class OrderService
+final readonly class DbOrderRepository implements OrderRepositoryInterface
 {
     public function __construct(
         private ConnectionInterface $db,
     ) {}
 
-    /**
-     * @param list<array{item_id:int,quantity:int}> $lines
-     */
-    public function create(string $customerName, int $locationId, string $notes, array $lines): void
+    public function create(Order $order): void
     {
         $aggregated = [];
-        foreach ($lines as $line) {
-            $aggregated[$line['item_id']] = ($aggregated[$line['item_id']] ?? 0) + $line['quantity'];
+        foreach ($order->lines as $line) {
+            $aggregated[$line->itemId] = ($aggregated[$line->itemId] ?? 0) + $line->quantity;
         }
 
-        if ($aggregated === []) {
-            throw new DomainException('Order minimal harus punya satu item.');
-        }
+        $this->assertLocationExists($order->locationId);
+        $this->assertStockAvailable($order->locationId, $aggregated);
 
-        $this->assertLocationExists($locationId);
-        $this->assertStockAvailable($locationId, $aggregated);
-
-        $this->db->transaction(function () use ($aggregated, $customerName, $locationId, $notes): void {
+        $this->db->transaction(function () use ($order, $aggregated): void {
             $orderId = $this->db->createCommand()->insertReturningPks('sales_order', [
-                'order_number' => 'SO-' . date('Ymd-His') . '-' . random_int(100, 999),
-                'location_id' => $locationId,
-                'customer_name' => $customerName,
-                'ordered_at' => date('Y-m-d H:i:s'),
-                'total_items' => array_sum($aggregated),
-                'notes' => $notes === '' ? null : $notes,
+                'order_number' => $order->orderNumber,
+                'location_id' => $order->locationId,
+                'customer_name' => $order->customerName,
+                'ordered_at' => $order->orderedAt,
+                'total_items' => $order->totalItems,
+                'notes' => $order->notes,
             ])['id'];
 
             foreach ($aggregated as $itemId => $quantity) {
@@ -58,7 +48,7 @@ final readonly class OrderService
                     'UPDATE item_location
                     SET quantity = quantity - :quantity
                     WHERE location_id = :locationId AND item_id = :itemId',
-                    [':quantity' => $quantity, ':locationId' => $locationId, ':itemId' => $itemId]
+                    [':quantity' => $quantity, ':locationId' => $order->locationId, ':itemId' => $itemId]
                 )->execute();
             }
         });

@@ -2,19 +2,16 @@
 
 declare(strict_types=1);
 
-namespace App\Sales;
+namespace App\Sales\Order;
 
 use Yiisoft\Db\Connection\ConnectionInterface;
 
-final readonly class OrderRepository
+final readonly class DbOrderViewRepository implements OrderViewRepositoryInterface
 {
     public function __construct(
         private ConnectionInterface $db,
     ) {}
 
-    /**
-     * @return array{orders:int,total_items_sold:int}
-     */
     public function getSummary(): array
     {
         return [
@@ -23,9 +20,6 @@ final readonly class OrderRepository
         ];
     }
 
-    /**
-     * @return list<array{order_number:string,location_name:string,customer_name:string,ordered_at:string,total_items:string,items_summary:string}>
-     */
     public function getRecentOrders(): array
     {
         return $this->db->createCommand(
@@ -41,9 +35,6 @@ final readonly class OrderRepository
         )->queryAll();
     }
 
-    /**
-     * @return list<array{id:string,order_number:string,location_name:string,customer_name:string,ordered_at:string,total_items:string,notes:?string,items_summary:string}>
-     */
     public function getOrders(): array
     {
         return $this->db->createCommand(
