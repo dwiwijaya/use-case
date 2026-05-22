@@ -2,22 +2,22 @@
 
 declare(strict_types=1);
 
-use App\Catalog\CatalogViewRepositoryInterface;
-use App\Catalog\DbCatalogViewRepository;
-use App\Catalog\Item\DbItemRepository;
-use App\Catalog\Item\ItemRepositoryInterface;
-use App\Catalog\Unit\DbUnitRepository;
-use App\Catalog\Unit\UnitRepositoryInterface;
-use App\Inventory\DbInventoryViewRepository;
-use App\Inventory\InventoryViewRepositoryInterface;
-use App\Inventory\Location\DbLocationRepository;
-use App\Inventory\Location\LocationRepositoryInterface;
-use App\Inventory\Stock\DbStockRepository;
-use App\Inventory\Stock\StockRepositoryInterface;
-use App\Sales\Order\DbOrderRepository;
-use App\Sales\Order\DbOrderViewRepository;
-use App\Sales\Order\OrderRepositoryInterface;
-use App\Sales\Order\OrderViewRepositoryInterface;
+use App\Catalog\Domain\Item\ItemRepositoryInterface;
+use App\Catalog\Domain\Unit\UnitRepositoryInterface;
+use App\Catalog\Infrastructure\Persistence\DbCatalogViewRepository;
+use App\Catalog\Infrastructure\Persistence\DbItemRepository;
+use App\Catalog\Infrastructure\Persistence\DbUnitRepository;
+use App\Catalog\ReadModel\CatalogViewRepositoryInterface;
+use App\Inventory\Location\Domain\LocationRepositoryInterface;
+use App\Inventory\Location\Infrastructure\Persistence\DbLocationRepository;
+use App\Inventory\ReadModel\DbInventoryViewRepository;
+use App\Inventory\ReadModel\InventoryViewRepositoryInterface;
+use App\Inventory\Stock\Domain\StockRepositoryInterface;
+use App\Inventory\Stock\Infrastructure\Persistence\DbStockRepository;
+use App\Sales\Order\Domain\OrderRepositoryInterface;
+use App\Sales\Order\Infrastructure\Persistence\DbOrderRepository;
+use App\Sales\Order\Infrastructure\Persistence\DbOrderViewRepository;
+use App\Sales\Order\ReadModel\OrderViewRepositoryInterface;
 use App\Shared\ApplicationParams;
 
 /** @var array $params */

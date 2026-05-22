@@ -2,10 +2,11 @@
 
 declare(strict_types=1);
 
-use App\Catalog\PageAction as CatalogPageAction;
-use App\Inventory\Location\PageAction as InventoryLocationPageAction;
-use App\Inventory\Stock\PageAction as InventoryStockPageAction;
-use App\Sales\Order\PageAction as SalesOrderPageAction;
+use App\Catalog\Action\PageAction as CatalogPageAction;
+use App\Home\Action\Action as HomeAction;
+use App\Inventory\Location\Action\PageAction as InventoryLocationPageAction;
+use App\Inventory\Stock\Action\PageAction as InventoryStockPageAction;
+use App\Sales\Order\Action\PageAction as SalesOrderPageAction;
 use App\Web;
 use Yiisoft\Router\Group;
 use Yiisoft\Router\Route;
@@ -14,7 +15,7 @@ return [
     Group::create()
         ->routes(
             Route::get('/')
-                ->action(Web\HomePage\Action::class)
+                ->action(HomeAction::class)
                 ->name('home'),
             Route::methods(['GET', 'POST'], '/catalog/items')
                 ->action(CatalogPageAction::class)
