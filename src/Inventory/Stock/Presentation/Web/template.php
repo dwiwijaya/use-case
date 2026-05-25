@@ -65,7 +65,7 @@ foreach ($items as $item) {
             <?= Field::select($form, 'locationId')->optionsData($locationOptions)->prompt('Pilih lokasi')->required() ?>
             <?= Field::select($form, 'itemId')->optionsData($itemOptions)->prompt('Pilih item')->required() ?>
             <?= Field::number($form, 'quantity')->min(0)->required() ?>
-            <?= Field::errorSummary($form) ?>
+            <?php Field::errorSummary($form) ?>
             <div class="form-actions full-width">
                 <button class="button" type="submit">Simpan stok</button>
             </div>

@@ -67,7 +67,7 @@ foreach ($items as $item) {
             <?= Field::text($form, 'customerName')->required()->placeholder('PT Sumber Makmur') ?>
             <?= Field::select($form, 'locationId')->optionsData($locationOptions)->prompt('Pilih lokasi')->required() ?>
             <?= Field::textarea($form, 'notes')->rows(3)->placeholder('Opsional') ?>
-            <?= Field::errorSummary($form) ?>
+            <?php Field::errorSummary($form) ?>
 
             <div class="subsection full-width">
                 <h3>Baris order</h3>

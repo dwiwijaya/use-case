@@ -19,25 +19,6 @@ use Yiisoft\View\WebView;
 $this->setTitle('Yii3 Inventory + Sales POC');
 ?>
 
-<section class="hero">
-    <div>
-        <p class="eyebrow">Proof of concept</p>
-        <h1>Yii 3 relevan untuk inventory dan sales dengan shared item.</h1>
-        <p class="lead">
-            POC ini memakai pendekatan context-based vertical slice yang ringan:
-            `Catalog` untuk shared item, `Inventory` untuk stok per location, dan `Sales` untuk order.
-        </p>
-    </div>
-    <div class="hero-card">
-        <h2>Kenapa struktur ini pas</h2>
-        <ul class="key-list">
-            <li><strong>Catalog</strong> jadi sumber kebenaran item dan unit.</li>
-            <li><strong>Inventory</strong> fokus ke lokasi dan jumlah stok.</li>
-            <li><strong>Sales</strong> cukup refer ke item shared lalu validasi stok ke location.</li>
-        </ul>
-    </div>
-</section>
-
 <section class="stats-grid">
     <article class="stat-card">
         <span class="stat-label">Catalog</span>

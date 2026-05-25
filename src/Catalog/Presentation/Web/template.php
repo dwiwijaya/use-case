@@ -62,7 +62,7 @@ foreach ($units as $unit) {
             <?= Field::hidden($unitForm, 'id') ?>
             <?= Field::text($unitForm, 'name')->required()->placeholder('Kilogram') ?>
             <?= Field::text($unitForm, 'symbol')->required()->placeholder('kg') ?>
-            <?= Field::errorSummary($unitForm) ?>
+            <?php Field::errorSummary($unitForm) ?>
             <div class="form-actions full-width">
                 <button class="button" type="submit">Simpan unit</button>
                 <?php if ($unitForm->id !== ''): ?>
@@ -119,7 +119,7 @@ foreach ($units as $unit) {
             <?= Field::text($itemForm, 'sku')->required()->placeholder('SKU-001') ?>
             <?= Field::text($itemForm, 'name')->required()->placeholder('Beras Premium') ?>
             <?= Field::select($itemForm, 'unitId')->optionsData($unitOptions)->prompt('Pilih unit')->required() ?>
-            <?= Field::errorSummary($itemForm) ?>
+            <?php Field::errorSummary($itemForm) ?>
             <div class="form-actions full-width">
                 <button class="button" type="submit">Simpan item</button>
                 <?php if ($itemForm->id !== ''): ?>

@@ -54,7 +54,7 @@ $pageUrl = $urlGenerator->generate('inventory.locations');
             <?= Field::hidden($form, 'id') ?>
             <?= Field::text($form, 'code')->required()->placeholder('JKT-01') ?>
             <?= Field::text($form, 'name')->required()->placeholder('Gudang Jakarta') ?>
-            <?= Field::errorSummary($form) ?>
+            <?php Field::errorSummary($form) ?>
             <div class="form-actions full-width">
                 <button class="button" type="submit">Simpan lokasi</button>
                 <?php if ($form->id !== ''): ?>
