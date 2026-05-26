@@ -6,7 +6,6 @@ namespace App\Catalog\Infrastructure\Persistence;
 
 use App\Catalog\Domain\Item\Item;
 use App\Catalog\Domain\Item\ItemRepositoryInterface;
-use DomainException;
 use Yiisoft\Db\Connection\ConnectionInterface;
 
 final readonly class DbItemRepository implements ItemRepositoryInterface
@@ -36,9 +35,6 @@ final readonly class DbItemRepository implements ItemRepositoryInterface
 
     public function save(Item $item): void
     {
-        $this->assertUniqueSku($item);
-        $this->assertUnitExists($item->unitId);
-
         $payload = [
             'sku' => $item->sku,
             'name' => $item->name,
@@ -50,10 +46,35 @@ final readonly class DbItemRepository implements ItemRepositoryInterface
             return;
         }
 
-        $this->db->createCommand()->update('item', $payload, 'id = :id', [':id' => $item->id])->execute();
+        $this->db->createCommand()->update(
+            table: 'item',
+            columns: $payload,
+            condition: 'id = :id',
+            params: [':id' => $item->id],
+        )->execute();
     }
 
-    public function delete(int $id): void
+    public function existsBySku(string $sku, ?int $excludeId = null): bool
+    {
+        $row = $this->db->createCommand(
+            'SELECT id FROM item WHERE sku = :sku AND (:id IS NULL OR id != :id)',
+            [':sku' => $sku, ':id' => $excludeId]
+        )->queryOne();
+
+        return $row !== null;
+    }
+
+    public function unitExists(int $unitId): bool
+    {
+        $exists = $this->db->createCommand(
+            'SELECT id FROM unit WHERE id = :id',
+            [':id' => $unitId]
+        )->queryScalar();
+
+        return $exists !== null && $exists !== false;
+    }
+
+    public function isInUse(int $id): bool
     {
         $stockUsage = (int) ($this->db->createCommand(
             'SELECT COUNT(*) FROM item_location WHERE item_id = :id',
@@ -64,34 +85,11 @@ final readonly class DbItemRepository implements ItemRepositoryInterface
             [':id' => $id]
         )->queryScalar() ?? 0);
 
-        if ($stockUsage > 0 || $orderUsage > 0) {
-            throw new DomainException('Item sudah dipakai di stok atau transaksi, jadi tidak bisa dihapus.');
-        }
+        return $stockUsage > 0 || $orderUsage > 0;
+    }
 
+    public function delete(int $id): void
+    {
         $this->db->createCommand()->delete('item', 'id = :id', [':id' => $id])->execute();
-    }
-
-    private function assertUniqueSku(Item $item): void
-    {
-        $row = $this->db->createCommand(
-            'SELECT id FROM item WHERE sku = :sku AND (:id IS NULL OR id != :id)',
-            [':sku' => $item->sku, ':id' => $item->id]
-        )->queryOne();
-
-        if ($row !== null) {
-            throw new DomainException('SKU item harus unik.');
-        }
-    }
-
-    private function assertUnitExists(int $unitId): void
-    {
-        $exists = $this->db->createCommand(
-            'SELECT id FROM unit WHERE id = :id',
-            [':id' => $unitId]
-        )->queryScalar();
-
-        if ($exists === null || $exists === false) {
-            throw new DomainException('Unit item tidak ditemukan.');
-        }
     }
 }

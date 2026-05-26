@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Catalog\Domain\Item;
 
+use Yiisoft\FormModel\Attribute\Safe;
 use Yiisoft\FormModel\FormModel;
 use Yiisoft\Validator\Label;
 use Yiisoft\Validator\Rule\Integer;
@@ -14,6 +15,7 @@ use function trim;
 
 final class ItemInput extends FormModel
 {
+    #[Safe]
     public string $id = '';
 
     #[Label('SKU')]

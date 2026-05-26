@@ -6,7 +6,6 @@ namespace App\Inventory\Location\Infrastructure\Persistence;
 
 use App\Inventory\Location\Domain\Location;
 use App\Inventory\Location\Domain\LocationRepositoryInterface;
-use DomainException;
 use Yiisoft\Db\Connection\ConnectionInterface;
 
 final readonly class DbLocationRepository implements LocationRepositoryInterface
@@ -35,25 +34,31 @@ final readonly class DbLocationRepository implements LocationRepositoryInterface
 
     public function save(Location $location): void
     {
-        $row = $this->db->createCommand(
-            'SELECT id FROM location WHERE code = :code AND (:id IS NULL OR id != :id)',
-            [':code' => $location->code, ':id' => $location->id]
-        )->queryOne();
-
-        if ($row !== null) {
-            throw new DomainException('Kode lokasi harus unik.');
-        }
-
         $payload = ['code' => $location->code, 'name' => $location->name];
         if ($location->id === null) {
             $this->db->createCommand()->insert('location', $payload)->execute();
             return;
         }
 
-        $this->db->createCommand()->update('location', $payload, 'id = :id', [':id' => $location->id])->execute();
+        $this->db->createCommand()->update(
+            table: 'location',
+            columns: $payload,
+            condition: 'id = :id',
+            params: [':id' => $location->id],
+        )->execute();
     }
 
-    public function delete(int $id): void
+    public function existsByCode(string $code, ?int $excludeId = null): bool
+    {
+        $row = $this->db->createCommand(
+            'SELECT id FROM location WHERE code = :code AND (:id IS NULL OR id != :id)',
+            [':code' => $code, ':id' => $excludeId]
+        )->queryOne();
+
+        return $row !== null;
+    }
+
+    public function isInUse(int $id): bool
     {
         $stockUsage = (int) ($this->db->createCommand(
             'SELECT COUNT(*) FROM item_location WHERE location_id = :id',
@@ -64,10 +69,11 @@ final readonly class DbLocationRepository implements LocationRepositoryInterface
             [':id' => $id]
         )->queryScalar() ?? 0);
 
-        if ($stockUsage > 0 || $orderUsage > 0) {
-            throw new DomainException('Lokasi sudah dipakai oleh stok atau transaksi.');
-        }
+        return $stockUsage > 0 || $orderUsage > 0;
+    }
 
+    public function delete(int $id): void
+    {
         $this->db->createCommand()->delete('location', 'id = :id', [':id' => $id])->execute();
     }
 }

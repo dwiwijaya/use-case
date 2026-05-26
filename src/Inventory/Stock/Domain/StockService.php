@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Inventory\Stock\Domain;
 
+use DomainException;
+
 final readonly class StockService
 {
     public function __construct(
@@ -12,7 +14,17 @@ final readonly class StockService
 
     public function save(StockInput $input): void
     {
-        $this->stock->save($input->toEntity());
+        $stock = $input->toEntity();
+
+        if (!$this->stock->locationExists($stock->locationId)) {
+            throw new DomainException('Lokasi stok tidak ditemukan.');
+        }
+
+        if (!$this->stock->itemExists($stock->itemId)) {
+            throw new DomainException('Item stok tidak ditemukan.');
+        }
+
+        $this->stock->save($stock);
     }
 
     public function delete(int $id): void

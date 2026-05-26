@@ -6,7 +6,6 @@ namespace App\Inventory\Stock\Infrastructure\Persistence;
 
 use App\Inventory\Stock\Domain\Stock;
 use App\Inventory\Stock\Domain\StockRepositoryInterface;
-use DomainException;
 use Yiisoft\Db\Connection\ConnectionInterface;
 
 final readonly class DbStockRepository implements StockRepositoryInterface
@@ -17,9 +16,6 @@ final readonly class DbStockRepository implements StockRepositoryInterface
 
     public function save(Stock $stock): void
     {
-        $this->assertLocationExists($stock->locationId);
-        $this->assertItemExists($stock->itemId);
-
         $existing = $this->db->createCommand(
             'SELECT id FROM item_location WHERE location_id = :locationId AND item_id = :itemId',
             [':locationId' => $stock->locationId, ':itemId' => $stock->itemId]
@@ -35,10 +31,10 @@ final readonly class DbStockRepository implements StockRepositoryInterface
         }
 
         $this->db->createCommand()->update(
-            'item_location',
-            ['quantity' => $stock->quantity],
-            'id = :id',
-            [':id' => (int) $existing['id']]
+            table: 'item_location',
+            columns: ['quantity' => $stock->quantity],
+            condition: 'id = :id',
+            params: [':id' => (int) $existing['id']]
         )->execute();
     }
 
@@ -47,27 +43,23 @@ final readonly class DbStockRepository implements StockRepositoryInterface
         $this->db->createCommand()->delete('item_location', 'id = :id', [':id' => $id])->execute();
     }
 
-    private function assertLocationExists(int $locationId): void
+    public function locationExists(int $locationId): bool
     {
         $exists = $this->db->createCommand(
             'SELECT id FROM location WHERE id = :id',
             [':id' => $locationId]
         )->queryScalar();
 
-        if ($exists === null || $exists === false) {
-            throw new DomainException('Lokasi stok tidak ditemukan.');
-        }
+        return $exists !== null && $exists !== false;
     }
 
-    private function assertItemExists(int $itemId): void
+    public function itemExists(int $itemId): bool
     {
         $exists = $this->db->createCommand(
             'SELECT id FROM item WHERE id = :id',
             [':id' => $itemId]
         )->queryScalar();
 
-        if ($exists === null || $exists === false) {
-            throw new DomainException('Item stok tidak ditemukan.');
-        }
+        return $exists !== null && $exists !== false;
     }
 }

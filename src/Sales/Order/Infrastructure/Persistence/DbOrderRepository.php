@@ -6,10 +6,8 @@ namespace App\Sales\Order\Infrastructure\Persistence;
 
 use App\Sales\Order\Domain\Order;
 use App\Sales\Order\Domain\OrderRepositoryInterface;
-use DomainException;
 use Yiisoft\Db\Connection\ConnectionInterface;
 
-use function array_keys;
 use function implode;
 use function sprintf;
 
@@ -25,9 +23,6 @@ final readonly class DbOrderRepository implements OrderRepositoryInterface
         foreach ($order->lines as $line) {
             $aggregated[$line->itemId] = ($aggregated[$line->itemId] ?? 0) + $line->quantity;
         }
-
-        $this->assertLocationExists($order->locationId);
-        $this->assertStockAvailable($order->locationId, $aggregated);
 
         $this->db->transaction(function () use ($order, $aggregated): void {
             $orderId = $this->db->createCommand()->insertReturningPks('sales_order', [
@@ -57,15 +52,20 @@ final readonly class DbOrderRepository implements OrderRepositoryInterface
     }
 
     /**
-     * @param array<int,int> $aggregated
+     * @param list<int> $itemIds
+     * @return array<int,int>
      */
-    private function assertStockAvailable(int $locationId, array $aggregated): void
+    public function getAvailableStock(int $locationId, array $itemIds): array
     {
         $placeholders = [];
         $params = [':locationId' => $locationId];
-        foreach (array_keys($aggregated) as $index => $itemId) {
+        foreach ($itemIds as $index => $itemId) {
             $placeholders[] = ':item' . $index;
             $params[':item' . $index] = $itemId;
+        }
+
+        if ($placeholders === []) {
+            return [];
         }
 
         $rows = $this->db->createCommand(
@@ -84,25 +84,16 @@ final readonly class DbOrderRepository implements OrderRepositoryInterface
             $stock[(int) $row['id']] = (int) $row['quantity'];
         }
 
-        foreach ($aggregated as $itemId => $quantity) {
-            $available = $stock[$itemId] ?? 0;
-            if ($available < $quantity) {
-                throw new DomainException(
-                    sprintf('Stok item #%d tidak cukup. Tersedia %d, diminta %d.', $itemId, $available, $quantity)
-                );
-            }
-        }
+        return $stock;
     }
 
-    private function assertLocationExists(int $locationId): void
+    public function locationExists(int $locationId): bool
     {
         $exists = $this->db->createCommand(
             'SELECT id FROM location WHERE id = :id',
             [':id' => $locationId]
         )->queryScalar();
 
-        if ($exists === null || $exists === false) {
-            throw new DomainException('Lokasi order tidak ditemukan.');
-        }
+        return $exists !== null && $exists !== false;
     }
 }

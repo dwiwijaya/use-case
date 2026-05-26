@@ -6,7 +6,6 @@ namespace App\Catalog\Infrastructure\Persistence;
 
 use App\Catalog\Domain\Unit\Unit;
 use App\Catalog\Domain\Unit\UnitRepositoryInterface;
-use DomainException;
 use Yiisoft\Db\Connection\ConnectionInterface;
 
 final readonly class DbUnitRepository implements UnitRepositoryInterface
@@ -35,8 +34,6 @@ final readonly class DbUnitRepository implements UnitRepositoryInterface
 
     public function save(Unit $unit): void
     {
-        $this->assertUnique($unit);
-
         $payload = [
             'name' => $unit->name,
             'symbol' => $unit->symbol,
@@ -47,32 +44,36 @@ final readonly class DbUnitRepository implements UnitRepositoryInterface
             return;
         }
 
-        $this->db->createCommand()->update('unit', $payload, 'id = :id', [':id' => $unit->id])->execute();
+        $this->db->createCommand()->update(
+            table: 'unit',
+            columns: $payload,
+            condition: 'id = :id',
+            params: [':id' => $unit->id],
+        )->execute();
     }
 
-    public function delete(int $id): void
+    public function existsByNameOrSymbol(string $name, string $symbol, ?int $excludeId = null): bool
+    {
+        $row = $this->db->createCommand(
+            'SELECT id FROM unit WHERE (name = :name OR symbol = :symbol) AND (:id IS NULL OR id != :id)',
+            [':name' => $name, ':symbol' => $symbol, ':id' => $excludeId]
+        )->queryOne();
+
+        return $row !== null;
+    }
+
+    public function isInUse(int $id): bool
     {
         $inUse = (int) ($this->db->createCommand(
             'SELECT COUNT(*) FROM item WHERE unit_id = :id',
             [':id' => $id]
         )->queryScalar() ?? 0);
 
-        if ($inUse > 0) {
-            throw new DomainException('Unit masih dipakai oleh item, jadi belum bisa dihapus.');
-        }
-
-        $this->db->createCommand()->delete('unit', 'id = :id', [':id' => $id])->execute();
+        return $inUse > 0;
     }
 
-    private function assertUnique(Unit $unit): void
+    public function delete(int $id): void
     {
-        $row = $this->db->createCommand(
-            'SELECT id FROM unit WHERE (name = :name OR symbol = :symbol) AND (:id IS NULL OR id != :id)',
-            [':name' => $unit->name, ':symbol' => $unit->symbol, ':id' => $unit->id]
-        )->queryOne();
-
-        if ($row !== null) {
-            throw new DomainException('Nama atau simbol unit sudah dipakai.');
-        }
+        $this->db->createCommand()->delete('unit', 'id = :id', [':id' => $id])->execute();
     }
 }

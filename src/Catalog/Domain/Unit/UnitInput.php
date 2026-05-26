@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Catalog\Domain\Unit;
 
+use Yiisoft\FormModel\Attribute\Safe;
 use Yiisoft\FormModel\FormModel;
 use Yiisoft\Validator\Label;
 use Yiisoft\Validator\Rule\Length;
@@ -13,6 +14,7 @@ use function trim;
 
 final class UnitInput extends FormModel
 {
+    #[Safe]
     public string $id = '';
 
     #[Label('Nama unit')]

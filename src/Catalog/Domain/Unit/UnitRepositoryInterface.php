@@ -8,6 +8,10 @@ interface UnitRepositoryInterface
 {
     public function findById(int $id): ?Unit;
 
+    public function existsByNameOrSymbol(string $name, string $symbol, ?int $excludeId = null): bool;
+
+    public function isInUse(int $id): bool;
+
     public function save(Unit $unit): void;
 
     public function delete(int $id): void;
